@@ -8,8 +8,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.arjuna.databroker</groupId>
-        <artifactId>plugins</artifactId>
+        <groupId>com.arjuna.dbplugins.test</groupId>
+        <artifactId>test-plugin-parent</artifactId>
         <version>1.0.0p1m1</version>
     </parent>
 
@@ -23,7 +23,7 @@
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
-            <version>20140107</version>
+            <version>20141113</version>
             <type>jar</type>
         </dependency>
         <dependency>
@@ -67,6 +67,27 @@
                     <plugin>
                         <groupId>org.jboss.as.plugins</groupId>
                         <artifactId>jboss-as-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>deploy</goal>
+                                </goals>
+                            </execution>
+                       </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>wildfly</id>
+    
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.wildfly.plugins</groupId>
+                        <artifactId>wildfly-maven-plugin</artifactId>
                         <executions>
                             <execution>
                                 <phase>install</phase>
