@@ -12,11 +12,12 @@ import java.util.Set;
 import java.util.logging.Logger;
 import org.json.JSONObject;
 import com.arjuna.databroker.data.DataConsumer;
-import com.arjuna.databroker.data.DataFlowNode;
+import com.arjuna.databroker.data.DataFlow;
 import com.arjuna.databroker.data.DataProvider;
 import com.arjuna.databroker.data.DataSink;
+import com.arjuna.databroker.data.jee.annotation.DataConsumerInjection;
 
-public class JSONLoggingDataSink implements DataSink, DataConsumer<JSONObject>
+public class JSONLoggingDataSink implements DataSink
 {
     private static final Logger logger = Logger.getLogger(JSONLoggingDataSink.class.getName());
 
@@ -26,28 +27,48 @@ public class JSONLoggingDataSink implements DataSink, DataConsumer<JSONObject>
 
         _name       = name;
         _properties = properties;
+        _dataFlow   = null;
     }
 
+    @Override
     public String getName()
     {
         return _name;
     }
 
+    @Override
+    public void setName(String name)
+    {
+        _name = name;
+    }
+
+    @Override
     public Map<String, String> getProperties()
     {
         return Collections.unmodifiableMap(_properties);
     }
 
     @Override
-    public void consume(DataProvider<JSONObject> dataProvider, JSONObject data)
+    public void setProperties(Map<String, String> properties)
     {
-        logger.info("JSONLoggingDataSink.consume: " + data.toString());
+        _properties = properties;
     }
 
     @Override
-    public DataFlowNode getDataFlowNode()
+    public DataFlow getDataFlow()
     {
-        return this;
+        return _dataFlow;
+    }
+
+    @Override
+    public void setDataFlow(DataFlow dataFlow)
+    {
+        _dataFlow = dataFlow;
+    }
+
+    public void consume(DataProvider<JSONObject> dataProvider, JSONObject data)
+    {
+        logger.info("JSONLoggingDataSink.consume: " + data.toString());
     }
 
     @Override
@@ -70,6 +91,9 @@ public class JSONLoggingDataSink implements DataSink, DataConsumer<JSONObject>
             return null;
     }
 
-    private String              _name;
-    private Map<String, String> _properties;
+    private String               _name;
+    private Map<String, String>  _properties;
+    private DataFlow             _dataFlow;
+    @DataConsumerInjection(methodName="consume")
+    private DataConsumer<String> _dataConsumer;
 }

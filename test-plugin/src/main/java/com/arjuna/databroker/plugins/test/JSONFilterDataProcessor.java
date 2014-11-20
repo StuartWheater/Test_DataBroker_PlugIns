@@ -7,18 +7,18 @@ package com.arjuna.databroker.plugins.test;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 import org.json.JSONObject;
 import com.arjuna.databroker.data.DataConsumer;
-import com.arjuna.databroker.data.DataFlowNode;
+import com.arjuna.databroker.data.DataFlow;
 import com.arjuna.databroker.data.DataProvider;
 import com.arjuna.databroker.data.DataProcessor;
+import com.arjuna.databroker.data.jee.annotation.DataConsumerInjection;
+import com.arjuna.databroker.data.jee.annotation.DataProviderInjection;
 
-public class JSONFilterDataProcessor implements DataProcessor, DataProvider<JSONObject>, DataConsumer<JSONObject>
+public class JSONFilterDataProcessor implements DataProcessor
 {
     private static final Logger logger = Logger.getLogger(JSONFilterDataProcessor.class.getName());
 
@@ -28,23 +28,48 @@ public class JSONFilterDataProcessor implements DataProcessor, DataProvider<JSON
     {
         logger.info("JSONFilterDataProcessor: " + name + ", " + properties);
 
-        _name          = name;
-        _properties    = properties;
-        _dataConsumers = new LinkedList<DataConsumer<JSONObject>>();
+        _name       = name;
+        _properties = properties;
+        _dataFlow   = null;
     }
 
+    @Override
     public String getName()
     {
         return _name;
     }
 
+    @Override
+    public void setName(String name)
+    {
+        _name = name;
+    }
+
+    @Override
     public Map<String, String> getProperties()
     {
         return Collections.unmodifiableMap(_properties);
     }
 
     @Override
-    public void consume(DataProvider<JSONObject> dataProvider, JSONObject data)
+    public void setProperties(Map<String, String> properties)
+    {
+        _properties = properties;
+    }
+
+    @Override
+    public DataFlow getDataFlow()
+    {
+        return _dataFlow;
+    }
+
+    @Override
+    public void setDataFlow(DataFlow dataFlow)
+    {
+        _dataFlow = dataFlow;
+    }
+
+    public void consume(JSONObject data)
     {
         logger.info("JSONFilterDataProcessor.consume: " + data.toString());
         
@@ -52,13 +77,27 @@ public class JSONFilterDataProcessor implements DataProcessor, DataProvider<JSON
 
         results.remove(REMOVEKEY_PROPERTYNAME);
 
-        produce(results);
+        _dataProvider.produce(results);
     }
 
     @Override
-    public DataFlowNode getDataFlowNode()
+    public Collection<Class<?>> getDataConsumerDataClasses()
     {
-        return this;
+        Set<Class<?>> dataConsumerDataClasses = new HashSet<Class<?>>();
+
+        dataConsumerDataClasses.add(JSONObject.class);
+        
+        return dataConsumerDataClasses;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> DataConsumer<T> getDataConsumer(Class<T> dataClass)
+    {
+        if (dataClass == JSONObject.class)
+            return (DataConsumer<T>) _dataConsumer;
+        else
+            return null;
     }
 
     @Override
@@ -81,52 +120,11 @@ public class JSONFilterDataProcessor implements DataProcessor, DataProvider<JSON
             return null;
     }
 
-    @Override
-    public Collection<Class<?>> getDataConsumerDataClasses()
-    {
-        Set<Class<?>> dataConsumerDataClasses = new HashSet<Class<?>>();
-
-        dataConsumerDataClasses.add(JSONObject.class);
-        
-        return dataConsumerDataClasses;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T> DataConsumer<T> getDataConsumer(Class<T> dataClass)
-    {
-        if (dataClass == JSONObject.class)
-            return (DataConsumer<T>) this;
-        else
-            return null;
-    }
-
-    @Override
-    public Collection<DataConsumer<JSONObject>> getDataConsumers()
-    {
-        return _dataConsumers;
-    }
-
-    @Override
-    public void addDataConsumer(DataConsumer<JSONObject> dataConsumer)
-    {
-        _dataConsumers.add(dataConsumer);
-    }
-
-    @Override
-    public void removeDataConsumer(DataConsumer<JSONObject> dataConsumer)
-    {
-        _dataConsumers.remove(dataConsumer);
-    }
-
-    @Override
-    public void produce(JSONObject data)
-    {
-        for (DataConsumer<JSONObject> dataConsumer: _dataConsumers)
-            dataConsumer.consume(this, data);
-    }
-
-    private String                         _name;
-    private Map<String, String>            _properties;
-    private List<DataConsumer<JSONObject>> _dataConsumers;
+    private String                   _name;
+    private Map<String, String>      _properties;
+    private DataFlow                 _dataFlow;
+    @DataConsumerInjection(methodName="consume")
+    private DataConsumer<JSONObject> _dataConsumer;
+    @DataProviderInjection
+    private DataProvider<JSONObject> _dataProvider;
 }
